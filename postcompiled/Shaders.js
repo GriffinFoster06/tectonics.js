@@ -50,7 +50,7 @@ void main() {
     float index_offset = map_projection_offset;
     float focus = lon(cameraPosition) + index_offset;
     float lon_focused = mod(lon(position_v.xyz) - focus, 2.*PI) - PI;
-    float lat_focused = lat(position_v.xyz); //+ (map_projection_offset*PI);
+    float lat_focused = lat(position_v.xyz);
     bool is_on_edge = lon_focused > PI*0.9 || lon_focused < -PI*0.9;
     vec4 displaced = vec4(
         lon_focused + index_offset,
