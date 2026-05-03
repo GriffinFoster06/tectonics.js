@@ -2,6 +2,9 @@ var vertexShaders = {};
 vertexShaders.equirectangular = `   
 #include "precompiled/shaders/vertex/equirectangular.glsl"
 `;
+vertexShaders.mercator = `   
+#include "precompiled/shaders/vertex/mercator.glsl"
+`;
 vertexShaders.texture = `
 #include "precompiled/shaders/vertex/texture.glsl"
 `;

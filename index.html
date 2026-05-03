@@ -168,6 +168,30 @@
                     <img src="icons/view-list.svg"/>
                     CSV
                 </button>
+                <button type="button"
+                    class="btn"
+                    v-on:click="mapExport('equirectangular', 'topographic', 'physical')">
+                    <img src="icons/terrain.svg"/>
+                    Equirectangular Physical
+                </button>
+                <button type="button"
+                    class="btn"
+                    v-on:click="mapExport('equirectangular', 'alt', 'heightmap')">
+                    <img src="icons/terrain-length.svg"/>
+                    Equirectangular Heightmap
+                </button>
+                <button type="button"
+                    class="btn"
+                    v-on:click="mapExport('mercator', 'topographic', 'physical')">
+                    <img src="icons/terrain.svg"/>
+                    Mercator Physical
+                </button>
+                <button type="button"
+                    class="btn"
+                    v-on:click="mapExport('mercator', 'alt', 'heightmap')">
+                    <img src="icons/terrain-length.svg"/>
+                    Mercator Heightmap
+                </button>
             </div>
         </div>
         <div id="import" class="short-axis-group">
@@ -757,6 +781,54 @@
         hidden_downloader_tag.click();
     }
 
+    const MAP_EXPORT_WIDTH = 4096;
+    const MAP_EXPORT_HEIGHT = 2048;
+
+    function exportMapImage(projectionKey, scalarKey, label) {
+        const renderer = view.gl_state.renderer;
+        const camera = view.gl_state.camera;
+        const previousSize = renderer.getSize(new THREE.Vector2());
+        const previousAspect = camera.aspect;
+        const previousState = {
+            projection: scalarViewVue.projectionSelected,
+            scalar: scalarViewVue.scalarViewSelected,
+            vector: scalarViewVue.vectorViewSelected,
+        };
+
+        renderer.setSize(MAP_EXPORT_WIDTH, MAP_EXPORT_HEIGHT);
+        camera.aspect = MAP_EXPORT_WIDTH / MAP_EXPORT_HEIGHT;
+        camera.updateProjectionMatrix();
+
+        scalarViewVue.projectionSelected = projectionKey;
+        view.setProjectionView(projectionViews[projectionKey]);
+        scalarViewVue.scalarViewSelected = scalarKey;
+        view.setScalarView(scalarViews[scalarKey]);
+        scalarViewVue.vectorViewSelected = 'disabled';
+        view.setVectorView(vectorViews.disabled);
+
+        view.update(sim);
+        view.render();
+
+        const dataUrl = view.getScreenshotDataURL();
+        const elapsed_time = format_time(sim.elapsed_time);
+        const filename = `${sim.focus().name}-${projectionKey}-${label}-${elapsed_time.quantity}${elapsed_time.unit}.png`;
+        download(dataUrl, filename);
+
+        renderer.setSize(previousSize.x, previousSize.y);
+        camera.aspect = previousAspect;
+        camera.updateProjectionMatrix();
+
+        scalarViewVue.projectionSelected = previousState.projection;
+        view.setProjectionView(projectionViews[previousState.projection]);
+        scalarViewVue.scalarViewSelected = previousState.scalar;
+        view.setScalarView(scalarViews[previousState.scalar]);
+        scalarViewVue.vectorViewSelected = previousState.vector;
+        view.setVectorView(vectorViews[previousState.vector]);
+
+        view.update(sim);
+        view.render();
+    }
+
 
     window.addEventListener('keyup', function(event) {
       if (event.keyCode == 80) { //p
@@ -877,7 +949,10 @@
             const elapsed_time = format_time(sim.elapsed_time);
             const filename = `${sim.focus().name}-${elapsed_time.quantity}${elapsed_time.unit}.csv`;
             download(blobUrl, filename);
-        }
+        },
+        mapExport(projectionKey, scalarKey, label) {
+            exportMapImage(projectionKey, scalarKey, label);
+        },
       }
     });
 
@@ -1021,6 +1096,7 @@
         projectionOptions: [
           { name: "Globe", value: "orthographic", icon: "icons/earth.svg" },
           { name: "Map", value: "equirectangular", icon: "icons/map.svg" },
+          { name: "Mercator", value: "mercator", icon: "icons/map.svg" },
           { name: "Texture", value: "texture", icon: "icons/texture.svg" },
         ],
         isFullscreen: false,
