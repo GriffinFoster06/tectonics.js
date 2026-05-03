@@ -50,7 +50,7 @@ void main() {
     float index_offset = map_projection_offset;
     float focus = lon(cameraPosition) + index_offset;
     float lon_focused = mod(lon(position_v.xyz) - focus, 2.*PI) - PI;
-    float lat_focused = lat(position_v.xyz); //+ (map_projection_offset*PI);
+    float lat_focused = lat(position_v.xyz);
     bool is_on_edge = lon_focused > PI*0.9 || lon_focused < -PI*0.9;
     vec4 displaced = vec4(
         lon_focused + index_offset,
@@ -60,6 +60,77 @@ void main() {
     mat4 scaleMatrix = mat4(1);
     scaleMatrix[3] = viewMatrix[3] * reference_distance / world_radius;
     gl_Position = projectionMatrix * scaleMatrix * displaced;
+    view_direction_v = -position_v.xyz;
+    view_direction_v.y = 0.;
+    view_direction_v = normalize(view_direction_v);
+    view_origin_v = view_matrix_inverse[3].xyz * reference_distance;
+    view_origin_v.y = 0.;
+    view_origin_v = normalize(view_origin_v);
+}
+`;
+vertexShaders.mercator = `
+const float PI = 3.14159265358979323846264338327950288419716939937510;
+const float PHI = 1.6180339887;
+const float BIG = 1e20;
+const float SMALL = 1e-20;
+// VIEW PROPERTIES -----------------------------------------------------------
+uniform mat4 projection_matrix_inverse;
+uniform mat4 view_matrix_inverse;
+uniform float reference_distance;
+varying vec3 view_direction_v;
+varying vec3 view_origin_v;
+varying vec4 position_v;
+// WORLD PROPERTIES
+uniform float sealevel;
+uniform float world_radius;
+attribute float displacement;
+attribute vec3 gradient;
+attribute float surface_temperature;
+attribute float snow_coverage;
+attribute float plant_coverage;
+attribute float scalar;
+attribute vec3 vector;
+varying float displacement_v;
+varying vec3 gradient_v;
+varying float surface_temperature_v;
+varying float snow_coverage_v;
+varying float plant_coverage_v;
+varying float scalar_v;
+// MISCELLANEOUS PROPERTIES
+uniform float map_projection_offset;
+uniform float animation_phase_angle;
+attribute float vector_fraction_traversed;
+varying float vector_fraction_traversed_v;
+float lon(vec3 pos) {
+    return atan(-pos.z, pos.x) + PI;
+}
+float lat(vec3 pos) {
+    return asin(pos.y / length(pos));
+}
+const float MAX_MERCATOR_LAT = 85.05112878 * PI / 180.0;
+float mercator_y(float latitude) {
+    float clamped = clamp(latitude, -MAX_MERCATOR_LAT, MAX_MERCATOR_LAT);
+    return log(tan(PI / 4.0 + clamped / 2.0));
+}
+void main() {
+    displacement_v = displacement;
+    gradient_v = gradient;
+    plant_coverage_v = plant_coverage;
+    snow_coverage_v = snow_coverage;
+    surface_temperature_v = surface_temperature;
+    scalar_v = scalar;
+    position_v = modelMatrix * vec4( position, 1.0 );
+    float index_offset = map_projection_offset;
+    float focus = lon(cameraPosition) + index_offset;
+    float lon_focused = mod(lon(position_v.xyz) - focus, 2.*PI) - PI + index_offset;
+    float lat_focused = lat(position_v.xyz); //+ (map_projection_offset*PI);
+    float height = displacement > sealevel? 0.005 : 0.0;
+    float max_y = mercator_y(MAX_MERCATOR_LAT);
+    gl_Position = vec4(
+        lon_focused / PI,
+        mercator_y(lat_focused) / max_y,
+        -height,
+        1);
     view_direction_v = -position_v.xyz;
     view_direction_v.y = 0.;
     view_direction_v = normalize(view_direction_v);
