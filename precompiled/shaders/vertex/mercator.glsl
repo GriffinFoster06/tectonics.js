@@ -21,6 +21,7 @@ void main() {
     snow_coverage_v = snow_coverage;
     surface_temperature_v = surface_temperature;
     scalar_v = scalar;
+    vector_fraction_traversed_v = vector_fraction_traversed;
     position_v = modelMatrix * vec4( position, 1.0 );
     
     float index_offset = map_projection_offset;
