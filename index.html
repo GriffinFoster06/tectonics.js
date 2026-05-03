@@ -795,38 +795,40 @@
             vector: scalarViewVue.vectorViewSelected,
         };
 
-        renderer.setSize(MAP_EXPORT_WIDTH, MAP_EXPORT_HEIGHT);
-        camera.aspect = MAP_EXPORT_WIDTH / MAP_EXPORT_HEIGHT;
-        camera.updateProjectionMatrix();
+        try {
+            renderer.setSize(MAP_EXPORT_WIDTH, MAP_EXPORT_HEIGHT);
+            camera.aspect = MAP_EXPORT_WIDTH / MAP_EXPORT_HEIGHT;
+            camera.updateProjectionMatrix();
 
-        scalarViewVue.projectionSelected = projectionKey;
-        view.setProjectionView(projectionViews[projectionKey]);
-        scalarViewVue.scalarViewSelected = scalarKey;
-        view.setScalarView(scalarViews[scalarKey]);
-        scalarViewVue.vectorViewSelected = 'disabled';
-        view.setVectorView(vectorViews.disabled);
+            scalarViewVue.projectionSelected = projectionKey;
+            view.setProjectionView(projectionViews[projectionKey]);
+            scalarViewVue.scalarViewSelected = scalarKey;
+            view.setScalarView(scalarViews[scalarKey]);
+            scalarViewVue.vectorViewSelected = 'disabled';
+            view.setVectorView(vectorViews.disabled);
 
-        view.update(sim);
-        view.render();
+            view.update(sim);
+            view.render();
 
-        const dataUrl = view.getScreenshotDataURL();
-        const elapsed_time = format_time(sim.elapsed_time);
-        const filename = `${sim.focus().name}-${projectionKey}-${label}-${elapsed_time.quantity}${elapsed_time.unit}.png`;
-        download(dataUrl, filename);
+            const dataUrl = view.getScreenshotDataURL();
+            const elapsed_time = format_time(sim.elapsed_time);
+            const filename = `${sim.focus().name}-${projectionKey}-${label}-${elapsed_time.quantity}${elapsed_time.unit}.png`;
+            download(dataUrl, filename);
+        } finally {
+            renderer.setSize(previousSize.x, previousSize.y);
+            camera.aspect = previousAspect;
+            camera.updateProjectionMatrix();
 
-        renderer.setSize(previousSize.x, previousSize.y);
-        camera.aspect = previousAspect;
-        camera.updateProjectionMatrix();
+            scalarViewVue.projectionSelected = previousState.projection;
+            view.setProjectionView(projectionViews[previousState.projection]);
+            scalarViewVue.scalarViewSelected = previousState.scalar;
+            view.setScalarView(scalarViews[previousState.scalar]);
+            scalarViewVue.vectorViewSelected = previousState.vector;
+            view.setVectorView(vectorViews[previousState.vector]);
 
-        scalarViewVue.projectionSelected = previousState.projection;
-        view.setProjectionView(projectionViews[previousState.projection]);
-        scalarViewVue.scalarViewSelected = previousState.scalar;
-        view.setScalarView(scalarViews[previousState.scalar]);
-        scalarViewVue.vectorViewSelected = previousState.vector;
-        view.setVectorView(vectorViews[previousState.vector]);
-
-        view.update(sim);
-        view.render();
+            view.update(sim);
+            view.render();
+        }
     }
 
 
